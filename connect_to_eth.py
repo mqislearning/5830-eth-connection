@@ -33,7 +33,7 @@ def connect_with_middleware(contract_json):
 	# create a contract object. Read more on the docs pages at https://web3py.readthedocs.io/en/stable/middleware.html
 	# and https://web3py.readthedocs.io/en/stable/web3.contract.html
 
-	ww3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+	w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 	assert w3.is_connected(), f"Failed to connect to BNB testnet at {url}"
 	
 	contract = w3.eth.contract(address=address, abi=abi)
