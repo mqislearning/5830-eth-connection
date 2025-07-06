@@ -47,8 +47,8 @@ def get_ape_info(ape_id):
     data['image'] = metadata.get('image', '')
 
     attributes = metadata.get('attributes', [])
-    for attr in attributes:
-        if attr.get('trait_type').lower() == 'eyes':
+    for attri in attributes:
+        if attri.get('trait_type').lower() == 'eyes':
             data['eyes'] = attr.get('value')
             break
 
