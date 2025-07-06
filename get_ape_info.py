@@ -49,7 +49,7 @@ def get_ape_info(ape_id):
     attributes = metadata.get('attributes', [])
     for attri in attributes:
         if attri.get('trait_type').lower() == 'eyes':
-            data['eyes'] = attr.get('value')
+            data['eyes'] = attri.get('value')
             break
 
     assert isinstance(data, dict), f'get_ape_info{ape_id} should return a dict'
