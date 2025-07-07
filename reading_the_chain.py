@@ -73,11 +73,11 @@ def is_ordered_block(w3, block_num):
             return tx.get("gasPrice")
 
     priority_fees = []
-    for tx in block.transactions:
-        fee = get_priority_fee(tx)
-        if fee is None:
+    for t in block.transactions:
+        f = get_priority_fee(t)
+        if f is None:
             return False
-        priority_fees.append(fee)
+        priority_fees.append(f)
 
     ordered = all(priority_fees[i] >= priority_fees[i + 1] for i in range(len(priority_fees) - 1))
     return ordered
