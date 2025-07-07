@@ -58,7 +58,7 @@ def is_ordered_block(w3, block_num):
 	
 	# TODO YOUR CODE HERE
 
-  base_fee = block.get("baseFeePerGas")  # This may be None if pre-EIP1559
+  	base_fee = block.get("baseFeePerGas")  # This may be None if pre-EIP1559
 
 	def get_priority_fee(tx):
 		if tx["type"] == "0x2":  # Type 2 transaction (EIP-1559)
