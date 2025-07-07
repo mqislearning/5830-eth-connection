@@ -54,39 +54,33 @@ def is_ordered_block(w3, block_num):
 
 	Conveniently, most type 2 transactions set the gasPrice field to be min( tx.maxPriorityFeePerGas + block.baseFeePerGas, tx.maxFeePerGas )
 	"""
-	block = w3.eth.get_block(block_num, full_transactions=True)
-	
-	# TODO YOUR CODE HERE
+    block = w3.eth.get_block(block_num, full_transactions=True)
+    base_fee = block.get("baseFeePerGas")
 
-  	base_fee = block.get("baseFeePerGas")  # This may be None if pre-EIP1559
+    def get_priority_fee(tx):
+        if tx["type"] == "0x2":
+            mpf = tx.get("maxPriorityFeePerGas")
+            mf = tx.get("maxFeePerGas")
+            if mpf is None or mf is None or base_fee is None:
+                return None
+            return min(mpf, mf - base_fee)
+        elif tx["type"] == "0x0":
+            gas_price = tx.get("gasPrice")
+            if base_fee is None or gas_price is None:
+                return None
+            return gas_price - base_fee
+        else:
+            return tx.get("gasPrice")
 
-	def get_priority_fee(tx):
-		if tx["type"] == "0x2":  # Type 2 transaction (EIP-1559)
-			mpf = tx.get("maxPriorityFeePerGas")
-			mf = tx.get("maxFeePerGas")
-			if mpf is None or mf is None or base_fee is None:
-				return None
-			return min(mpf, mf - base_fee)
-		elif tx["type"] == "0x0":  # Legacy transaction
-			gas_price = tx.get("gasPrice")
-			if base_fee is None or gas_price is None:
-				return None
-			return gas_price - base_fee
-		else:
-			# fallback: try gasPrice if no other info
-			return tx.get("gasPrice")
+    priority_fees = []
+    for tx in block.transactions:
+        fee = get_priority_fee(tx)
+        if fee is None:
+            return False
+        priority_fees.append(fee)
 
-	# Get priority fee list
-	priority_fees = []
-	for tx in block.transactions:
-		fee = get_priority_fee(tx)
-		if fee is None:
-			return False
-		priority_fees.append(fee)
-
-  	ordered = all(priority_fees[i] >= priority_fees[i + 1] for i in range(len(priority_fees) - 1))
-	return ordered
-
+    ordered = all(priority_fees[i] >= priority_fees[i + 1] for i in range(len(priority_fees) - 1))
+    return ordered
 
 def get_contract_values(contract, admin_address, owner_address):
 	"""
