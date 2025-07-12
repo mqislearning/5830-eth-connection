@@ -8,8 +8,8 @@ def sign(m):
 
     # TODO create an account for signing the message
     account_object = eth_account.Account.create()  # Create an Eth account
-    public_key = account_object.key  # Eth account public key
-    private_key = account_object.address  # Eth account private key
+    public_key = account_object.address  # Eth account public key
+    private_key = account_object.key  # Eth account private key
 
     # TODO sign the given message "m"
     message = encode_defunct(text=m)  # Encode the message
