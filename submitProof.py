@@ -153,8 +153,10 @@ def send_signed_msg(proof, random_leaf):
     contract = w3.eth.contract(address=address, abi=abi)
 
     nonce = w3.eth.get_transaction_count(acct.address)
-
-    tx = contract.functions.submit(proof, random_leaf).build_transaction({
+    # Convert back to integer prime from bytes for submission
+    leaf_int = int.from_bytes(random_leaf, 'big')
+    
+    tx = contract.functions.submit(proof, leaf_int).build_transaction({
         'from': acct.address,
         'nonce': nonce,
         'gas': 300000,
