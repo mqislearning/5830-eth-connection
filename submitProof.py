@@ -159,8 +159,8 @@ def send_signed_msg(proof, random_leaf):
     tx = contract.functions.submit(proof, random_leaf).build_transaction({
         'from': acct.address,
         'nonce': nonce,
-        'gas': 1500000,
-        'gasPrice': w3.to_wei('40', 'gwei')
+        'gas': 200000,
+        'gasPrice': w3.to_wei('10', 'gwei')
     })
     
     signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
