@@ -25,20 +25,20 @@ def mine_block(k, prev_hash, transactions):
     nonce_int = 0
     while True:
         # Convert nonce to bytes (utf-8 encoded string version of the number)
-        nonce_bytes = str(nonce_int).encode('utf-8')
+        nonce_b = str(nonce_int).encode('utf-8')
 
         # Construct full input for hash
-        full_input = prev_hash + tx_bytes + nonce_bytes
+        full_input = prev_hash + tx_bytes + nonce_b
 
-        # Compute SHA256 hash
-        hash_result = hashlib.sha256(full_input).digest()
+        # Compute SHA256 hash, hash_result
+        hash_r = hashlib.sha256(full_input).digest()
 
         # Convert hash to binary string
-        bin_hash = bin(int.from_bytes(hash_result, byteorder='big'))
+        bin_hash = bin(int.from_bytes(hash_r, byteorder='big'))
 
         # Check if binary ends with at least k zeros
         if bin_hash.endswith('0' * k):
-            nonce = nonce_bytes
+            nonce = nonce_b
             break
 
         nonce_int += 1
