@@ -149,24 +149,23 @@ def send_signed_msg(proof, random_leaf):
     address, abi = get_contract_info(chain)
     w3 = connect_to(chain)
 
-    # TODO YOUR CODE HERE
     contract = w3.eth.contract(address=address, abi=abi)
-
     nonce = w3.eth.get_transaction_count(acct.address)
-    # Convert back to integer prime from bytes for submission
-    leaf_int = int.from_bytes(random_leaf, 'big')
-    
-    tx = contract.functions.submit(proof, leaf_int).build_transaction({
+    transaction = contract.functions.submit(proof,
+                                            random_leaf).build_transaction({
         'from': acct.address,
         'nonce': nonce,
-        'gas': 300000,
-        'gasPrice': w3.to_wei('5', 'gwei')
+        'gas': 2000000,
+        'gasPrice': w3.to_wei('50', 'gwei')
     })
 
-    signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-    
-    return tx_hash.hex()
+
+    signed_tx = w3.eth.account.sign_transaction(transaction,
+                                                private_key=acct.key)
+
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+    return w3.to_hex(tx_hash)
 
 
 # Helper functions that do not need to be modified
