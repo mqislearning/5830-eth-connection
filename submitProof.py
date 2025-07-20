@@ -25,7 +25,7 @@ def merkle_assignment():
     tree = build_merkle(leaves)
 
     # Select a random leaf and create a proof for that leaf
-    random_leaf_index = 1500 #TODO generate a random index from primes to claim (0 is already claimed)
+    random_leaf_index = 4096 #TODO generate a random index from primes to claim (0 is already claimed)
     proof = prove_merkle(tree, random_leaf_index)
 
     # This is the same way the grader generates a challenge for sign_challenge()
@@ -156,7 +156,7 @@ def send_signed_msg(proof, random_leaf):
     # 因为 random_leaf 是 bytes 类型（leaf），我们需要转换成 int 提交给合约
     leaf_int = int.from_bytes(random_leaf, 'big')
 
-    tx = contract.functions.submit(proof, random_leaf).build_transaction({
+    tx = contract.functions.submit(random_leaf, proof).build_transaction({
         'from': acct.address,
         'nonce': nonce,
         'gas': 500000,
