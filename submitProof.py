@@ -156,13 +156,13 @@ def send_signed_msg(proof, random_leaf):
     # 因为 random_leaf 是 bytes 类型（leaf），我们需要转换成 int 提交给合约
     leaf_int = int.from_bytes(random_leaf, 'big')
 
-    tx = contract.functions.submit(proof, leaf_int).build_transaction({
+    tx = contract.functions.submit(proof, random_leaf).build_transaction({
         'from': acct.address,
         'nonce': nonce,
-        'gas': 300000,
-        'gasPrice': w3.to_wei('5', 'gwei')
+        'gas': 1500000,
+        'gasPrice': w3.to_wei('40', 'gwei')
     })
-
+    
     signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     return tx_hash.hex()
