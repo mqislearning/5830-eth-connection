@@ -156,7 +156,7 @@ def send_signed_msg(proof, random_leaf):
     # 因为 random_leaf 是 bytes 类型（leaf），我们需要转换成 int 提交给合约
     leaf_int = int.from_bytes(random_leaf, 'big')
 
-    tx = contract.functions.submit(random_leaf, proof).build_transaction({
+    tx = contract.functions.submit(proof, random_leaf).build_transaction({
         'from': acct.address,
         'nonce': nonce,
         'gas': 500000,
