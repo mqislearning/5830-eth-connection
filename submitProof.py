@@ -107,9 +107,9 @@ def prove_merkle(merkle_tree, random_indx):
     """
     merkle_proof = []
     # TODO YOUR CODE HERE
-    for level in range(len(tree) - 1):
+    for level in range(len(merkle_tree) - 1):
         sibling_index = index ^ 1  # XOR flips last bit to get sibling
-        level_nodes = tree[level]
+        level_nodes = merkle_tree[level]
         if sibling_index < len(level_nodes):
             merkle_proof.append(level_nodes[sibling_index])
         index //= 2
