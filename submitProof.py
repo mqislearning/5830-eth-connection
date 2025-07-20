@@ -150,22 +150,22 @@ def send_signed_msg(proof, random_leaf):
     w3 = connect_to(chain)
 
     contract = w3.eth.contract(address=address, abi=abi)
+
     nonce = w3.eth.get_transaction_count(acct.address)
-    transaction = contract.functions.submit(proof,
-                                            random_leaf).build_transaction({
+
+    # 因为 random_leaf 是 bytes 类型（leaf），我们需要转换成 int 提交给合约
+    leaf_int = int.from_bytes(random_leaf, 'big')
+
+    tx = contract.functions.submit(proof, leaf_int).build_transaction({
         'from': acct.address,
         'nonce': nonce,
         'gas': 300000,
         'gasPrice': w3.to_wei('5', 'gwei')
     })
 
-
-    signed_tx = w3.eth.account.sign_transaction(transaction,
-                                                private_key=acct.key)
-
+    signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-    return w3.to_hex(tx_hash)
+    return tx_hash.hex()
 
 
 # Helper functions that do not need to be modified
