@@ -24,46 +24,45 @@ contract Destination is AccessControl {
 
 	function wrap(address _underlying_token, address _recipient, uint256 _amount ) public onlyRole(WARDEN_ROLE) {
 		//YOUR CODE HERE
-      address wrapped = underlying_tokens[_underlying_token];
-      require(wrapped != address(0), "Token not registered");
+      require(wrapped_tokens[_underlying_token] != address(0), "Unregistered Token");
+      require(_recipient != address(0), "Zero address");
+      require(_amount > 0, "Amount should > zero");
 
-      BridgeToken token = BridgeToken(wrapped);
-      token.mint(_recipient, _amount);
+      BridgeToken wrappedTok = BridgeToken(wrapped_tokens[_underlying_token]);
+	    wrappedTok.mint(_recipient, _amount);
 
-      emit Wrap(_underlying_token, wrapped, _recipient, _amount);
+      emit Wrap(_underlying_token,address(wrappedTok), _recipient, _amount);
 	}
 
 	function unwrap(address _wrapped_token, address _recipient, uint256 _amount ) public {
 		//YOUR CODE HERE
-      address underlying = wrapped_tokens[_wrapped_token];
-      require(underlying != address(0), "Wrapped token not registered");
+      address underlying_token = underlying_tokens[_wrapped_token];
+      require(underlying_tokens[_wrapped_token] != address(0), "Invalid wrapped token");
+      require(_amount > 0, "Amount should > zero ");
+      require(_recipient != address(0), "Zero address");
 
-        // Burn token from sender
-      BridgeToken token = BridgeToken(_wrapped_token);
-      token.burnFrom(msg.sender, _amount); // Burn from msg.sender
-
-      emit Unwrap(underlying, _wrapped_token, msg.sender, _recipient, _amount);
+      BridgeToken wrappedTok = BridgeToken(_wrapped_token);
+	    wrappedTok.burnFrom(msg.sender, _amount);
+		
+      emit Unwrap(underlying_token, _wrapped_token, msg.sender, _recipient, _amount);
     }
-	}
+	
 
 	function createToken(address _underlying_token, string memory name, string memory symbol ) public onlyRole(CREATOR_ROLE) returns(address) {
 		//YOUR CODE HERE
-      require(underlying_tokens[_underlying_token] == address(0), "Token already registered");
+      require(wrapped_tokens[_underlying_token] == address(0), "Token already registered");
 
-    // Deploy new BridgeToken
-      BridgeToken newToken = new BridgeToken(name, symbol, _underlying_token);
+      BridgeToken WrappedTok = new BridgeToken(_underlying_token, name, symbol, address(this));
+      address WrappedTokenAddr = address(WrappedTok);
 
-    // Register mapping
-      underlying_tokens[_underlying_token] = address(newToken);
-      wrapped_tokens[address(newToken)] = _underlying_token;
+      wrapped_tokens[_underlying_token] = WrappedTokenAddr;
+      underlying_tokens[WrappedTokenAddr] = _underlying_token;
+      tokens.push(_underlying_token);
+      emit Creation(_underlying_token, WrappedTokenAddr);
 
-        // Track all wrapped tokens
-      tokens.push(address(newToken));
-
-      emit Creation(_underlying_token, address(newToken));
-      return address(newToken);
+      return WrappedTokenAddr;
+    }
 	}
-
 
 
 
