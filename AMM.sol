@@ -69,12 +69,12 @@ contract AMM is AccessControl{
 	  uint256 reserveOut = sellToken == tokenA ? qtyB : qtyA;
 
 	  // Apply fee (feebps = 3 by default, i.e., 0.03%)
-	  uint256 effectiveAmountIn = (sellAmount * (10000 - feebps)) / 10000;
+	  uint256 effectiveAmtIn = (sellAmount * (10000 - feebps)) / 10000;
 
 	  // Calculate output amount using x*y=k
 	  // dy = y - (k / (x + dx))
 	  uint256 k = reserveIn * reserveOut;
-	  uint256 newReserveIn = reserveIn + effectiveAmountIn;
+	  uint256 newReserveIn = reserveIn + effectiveAmtIn;
 	  uint256 newReserveOut = k / newReserveIn;
 	  swapAmt = reserveOut - newReserveOut;
 
