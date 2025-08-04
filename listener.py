@@ -49,7 +49,21 @@ def scan_blocks(chain, start_block, end_block, contract_address, eventfile='depo
         print( f"Scanning block {start_block} on {chain}" )
     else:
         print( f"Scanning blocks {start_block} - {end_block} on {chain}" )
+    
+    all_logs = []
 
+    def process_events(events):
+        for evt in events:
+            log = {
+                "chain": chain,
+                "token": evt.args["token"],
+                "recipient": evt.args["recipient"],
+                "amount": str(evt.args["amount"]),  # Convert to string to avoid scientific notation
+                "transactionHash": evt.transactionHash.hex(),
+                "address": evt.address,
+                "date": datetime.utcnow().strftime('%m/%d/%Y %H:%M:%S')
+            }
+            all_logs.append(log)
     if end_block - start_block < 30:
         event_filter = contract.events.Deposit.create_filter(from_block=start_block,to_block=end_block,argument_filters=arg_filter)
         events = event_filter.get_all_entries()
