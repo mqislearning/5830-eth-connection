@@ -50,20 +50,21 @@ def scan_blocks(chain, start_block, end_block, contract_address, eventfile='depo
     else:
         print( f"Scanning blocks {start_block} - {end_block} on {chain}" )
     
-    all_logs = []
+    logs_list = []
 
     def process_events(events):
-        for evt in events:
+        for e in events:
             log = {
                 "chain": chain,
-                "token": evt.args["token"],
-                "recipient": evt.args["recipient"],
-                "amount": str(evt.args["amount"]),  # Convert to string to avoid scientific notation
-                "transactionHash": evt.transactionHash.hex(),
-                "address": evt.address,
+                "token": e.args["token"],
+                "recipient": e.args["recipient"],
+                "amount": str(e.args["amount"]),  # Convert to string to avoid scientific notation
+                "transactionHash": e.transactionHash.hex(),
+                "address": e.address,
                 "date": datetime.utcnow().strftime('%m/%d/%Y %H:%M:%S')
             }
-            all_logs.append(log)
+            logs_list.append(log)
+		
     if end_block - start_block < 30:
         event_filter = contract.events.Deposit.create_filter(from_block=start_block,to_block=end_block,argument_filters=arg_filter)
         events = event_filter.get_all_entries()
@@ -77,9 +78,9 @@ def scan_blocks(chain, start_block, end_block, contract_address, eventfile='depo
             #print( f"Got {len(events)} entries for block {block_num}" )
             # TODO YOUR CODE HERE
             process_events(events)
-    if all_logs:
-        df = pd.DataFrame(all_logs)
+    if logs_list:
+        df = pd.DataFrame(logs_list)
         df.to_csv(eventfile, index=False)
-        print(f"Wrote {len(all_logs)} events to {eventfile}")
+        print(f"Wrote {len(logs_list)} events to {eventfile}")
     else:
         print("No Deposit events found in given block range.")
