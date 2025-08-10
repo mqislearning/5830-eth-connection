@@ -44,79 +44,93 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         When Unwrap events are found on the destination chain, call the 'withdraw' function on the source chain
     """
 
-    # This is different from Bridge IV where chain was "avax" or "bsc"
-    if chain not in ['source','destination']:
-        print( f"Invalid chain: {chain}" )
-        return 0
-    
-        #YOUR CODE HERE
-    # Connect to current chain
-    w3 = connect_to(chain)
-    contract_data = get_contract_info(chain, contract_info)
-    contract_address = Web3.to_checksum_address(contract_data["address"])
-    contract_abi = contract_data["abi"]
-    contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
-    # Connect to the other chain
-    other_chain = "destination" if chain == "source" else "source"
-    other_w3 = connect_to(other_chain)
-    other_data = get_contract_info(other_chain, contract_info)
-    other_contract_address = Web3.to_checksum_address(other_data["address"])
-    other_contract_abi = other_data["abi"]
-    other_contract = other_w3.eth.contract(address=other_contract_address, abi=other_contract_abi)
+    if chain not in ['source', 'destination']:
+        print(f"Invalid chain argument: {chain}. Must be 'source' or 'destination'.")
+        return
 
-    # Load private key and sender address
-    with open(contract_info, "r") as f:
-        config = json.load(f)
-    private_key = config["warden"]["private_key"]
-    sender_address = Web3.to_checksum_address(config["warden"]["address"])
 
-    # Block range
-    end_block = w3.eth.get_block_number()
-    start_block = max(0, end_block - 5)
+    w3_current = connect_to(chain)
+    other_chain = 'destination' if chain == 'source' else 'source'
+    w3_other = connect_to(other_chain)
 
-    if chain == "source":
-        # Listen for Deposit(token, recipient, amount)
-        event_filter = contract.events.Deposit.create_filter(fromBlock=start_block, toBlock=end_block)
-        events = event_filter.get_all_entries()
+    contracts = {
+        chain: {
+            'web3': w3_current,
+            'details': get_contract_info(chain, contract_info)
+        },
+        other_chain: {
+            'web3': w3_other,
+            'details': get_contract_info(other_chain, contract_info)
+        }
+    }
 
-        for e in events:
-            token = e.args["token"]
-            recipient = e.args["recipient"]
-            amount = e.args["amount"]
-            print(f"[source] Detected Deposit: {token}, to={recipient}, amount={amount}")
 
-            tx = other_contract.functions.wrap(token, recipient, amount).build_transaction({
-                "from": sender_address,
-                "nonce": other_w3.eth.get_transaction_count(sender_address),
-                "gas": 500000,
-                "gasPrice": other_w3.eth.gas_price,
-                "chainId": other_w3.eth.chain_id
-            })
-            signed = other_w3.eth.account.sign_transaction(tx, private_key)
-            tx_hash = other_w3.eth.send_raw_transaction(signed.rawTransaction)
-            print(f"[destination] wrap() sent: {tx_hash.hex()}")
+    contract_current = contracts[chain]['web3'].eth.contract(
+        address=contracts[chain]['details']['address'],
+        abi=contracts[chain]['details']['abi']
+    )
+    contract_other = contracts[other_chain]['web3'].eth.contract(
+        address=contracts[other_chain]['details']['address'],
+        abi=contracts[other_chain]['details']['abi']
+    )
 
-    elif chain == "destination":
-        # Listen for Unwrap(wrapped_token, to, amount)
-        event_filter = contract.events.Unwrap.create_filter(fromBlock=start_block, toBlock=end_block)
-        events = event_filter.get_all_entries()
+    pk = "0x7bf22e78491476695a0f472ea12d522be65584cedcdab14b85eecfa22b404d51"
+    sending_account = w3_other.eth.account.from_key(pk)
+    sender_addr = sending_account.address
+    sender_nonce = w3_other.eth.get_transaction_count(sender_addr)
 
-        for e in events:
-            wrapped_token = e.address
-            recipient = e.args["to"]
-            amount = e.args["amount"]
-            print(f"[destination] Detected Unwrap: {wrapped_token}, to={recipient}, amount={amount}")
 
-            tx = other_contract.functions.withdraw(wrapped_token, recipient, amount).build_transaction({
-                "from": sender_address,
-                "nonce": other_w3.eth.get_transaction_count(sender_address),
-                "gas": 500000,
-                "gasPrice": other_w3.eth.gas_price,
-                "chainId": other_w3.eth.chain_id
-            })
-            signed = other_w3.eth.account.sign_transaction(tx, private_key)
-            tx_hash = other_w3.eth.send_raw_transaction(signed.rawTransaction)
-            print(f"[source] withdraw() sent: {tx_hash.hex()}")
+    event_map = {
+        'source': {
+            'event': 'Deposit',
+            'target_func': 'wrap',
+            'chain_id': 97
+        },
+        'destination': {
+            'event': 'Unwrap',
+            'target_func': 'withdraw',
+            'chain_id': 43113
+        }
+    }
+
+    chain_cfg = event_map[chain]
+
+
+    latest_blk = w3_current.eth.block_number
+    start_blk = max(0, latest_blk - 19)
+
+    event_filter = getattr(contract_current.events, chain_cfg['event']).create_filter(
+        from_block=start_blk,
+        to_block=latest_blk
+    )
+    detected_events = event_filter.get_all_entries()
+
+    for evt in detected_events:
+        params = evt['args']
+
+        if chain == 'source':
+            token_addr = params['token']
+            recipient_addr = params['recipient']
+        else:
+            token_addr = params['underlying_token']
+            recipient_addr = params['to']
+
+        amt = params['amount']
+
+        tx = getattr(contract_other.functions, chain_cfg['target_func'])(
+            token_addr, recipient_addr, amt
+        ).build_transaction({
+            'from': sender_addr,
+            'nonce': sender_nonce,
+            'gas': 300000,
+            'gasPrice': w3_other.eth.gas_price,
+            'chainId': chain_cfg['chain_id']
+        })
+
+        signed_tx = w3_other.eth.account.sign_transaction(tx, pk)
+        tx_hash = w3_other.eth.send_raw_transaction(signed_tx.rawTransaction)
+        w3_other.eth.wait_for_transaction_receipt(tx_hash)
+        sender_nonce += 1
 
         
