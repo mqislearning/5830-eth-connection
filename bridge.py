@@ -129,7 +129,7 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         })
 
         signed_tx = w3_other.eth.account.sign_transaction(tx, pk)
-        tx_hash = w3_other.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = w3_other.eth.send_raw_transaction(signed_tx.raw_transaction)
         w3_other.eth.wait_for_transaction_receipt(tx_hash)
         sender_nonce += 1
 
